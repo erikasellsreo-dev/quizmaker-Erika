@@ -137,8 +137,8 @@ async function fetchAIQuestions(topic, subtopic, seen = [], count = 10) {
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1500,
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 4000,
         temperature: 1,
         messages: [
           {
@@ -146,12 +146,12 @@ async function fetchAIQuestions(topic, subtopic, seen = [], count = 10) {
             content: `You are a quiz generator. Session ID: ${Math.random().toString(36).slice(2)}. Generate ${count} multiple choice quiz questions about "${subtopic}" in the context of ${topic}.
 ${seenNote}
 STRICT RULES:
-- Each question MUST be completely unique and different from all others
-- Cover a WIDE variety of angles: beginner tips, advanced techniques, common mistakes, surprising facts, troubleshooting, history, science behind it
+- Mix difficulty: 40% easy, 40% medium, 20% challenging
+- Cover a WIDE variety of angles: practical tips, common mistakes, surprising facts, troubleshooting, how-to
 - Mix question styles: "what is", "why does", "when should", "which of these", "what happens when", "how do you"
-- Questions should range from easy to challenging
+- Start with accessible questions anyone can understand
 - NEVER ask about the same concept twice
-- Think creatively — go beyond the obvious beginner questions
+- Make questions practical and useful for someone learning this topic
 Return ONLY a valid JSON array. Each object must have exactly:
 "question" (string), "options" (array of 4 strings), "answer" (string matching one option exactly), "explanation" (string).
 No markdown, no preamble, just the JSON array.`,
@@ -161,11 +161,20 @@ No markdown, no preamble, just the JSON array.`,
     });
 
     const data = await res.json();
+    console.log("API response status:", res.status);
+    console.log("API response:", JSON.stringify(data).slice(0, 300));
     const text = data.content?.[0]?.text ?? "";
-    const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
+    console.log("AI generated text:", text.slice(0, 500));
+    const clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    const start = clean.indexOf("[");
+    const end = clean.lastIndexOf("]");
+    const jsonStr = start !== -1 && end !== -1 ? clean.slice(start, end + 1) : clean;
+    console.log("Parsing JSON:", jsonStr.slice(0, 200));
+    const parsed = JSON.parse(jsonStr);
+    console.log("Parsed questions:", parsed.length, parsed[0]?.question);
     return parsed.map((q) => ({ ...q, aiGenerated: true }));
-  } catch {
+  } catch (err) {
+    console.log("Parse error:", err.message);
     const pool = SEEDS[topic]?.[subtopic] ?? Object.values(SEEDS[topic] ?? {})[0] ?? [];
     return shuffle(
       Array.from({ length: Math.min(count, pool.length || 4) }, (_, i) => ({
@@ -204,7 +213,7 @@ export default function QuizApp() {
     setFlagged(new Set());
     setIndex(0);
     seenQ.current = [];
-    const qs = await fetchAIQuestions(t, s, [], 10);
+    const qs = await fetchAIQuestions(t, s, [], 5);
     seenQ.current = qs.map((q) => q.question);
     setQuestions(qs);
     setScreen("quiz");
@@ -216,7 +225,7 @@ export default function QuizApp() {
     if (screen !== "quiz" || fetchingMore.current || !topic || !subtopic) return;
     if (questions.length > 0 && questions.length - index <= 3) {
       fetchingMore.current = true;
-      fetchAIQuestions(topic, subtopic, seenQ.current, 10).then((more) => {
+      fetchAIQuestions(topic, subtopic, seenQ.current, 5).then((more) => {
         const existingQs = new Set(seenQ.current.map(q => q.toLowerCase()));
         const filtered = more.filter(q => !existingQs.has(q.question.toLowerCase()));
         const toAdd = filtered.length > 0 ? filtered : more;
@@ -528,7 +537,7 @@ const s = {
   wrap: { maxWidth: 500, margin: "0 auto", padding: "24px 20px", width: "100%", flex: 1 },
   badge: { display: "inline-flex", alignItems: "center", gap: 6, background: "#ffffff0d", border: "1px solid #ffffff18", borderRadius: 99, padding: "4px 12px", fontSize: 12, color: "#666", marginBottom: 20 },
   title: { fontSize: 36, fontWeight: 800, lineHeight: 1.2, letterSpacing: -1, color: "#fff", margin: 0 },
-  topicCard: { width: "100%", border: "1px solid", borderRadius: 16, padding: "18px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 12, cursor: "pointer", textAlign: "left", background: "none" },
+  topicCard: { width: "100%", border: "1px solid", borderRadius: 16, padding: "18px 16px", display: "flex", alignItems: "center", gap: 14, marginBottom: 12, cursor: "pointer", textAlign: "left", background: "none", WebkitTapHighlightColor: "transparent", touchAction: "manipulation", userSelect: "none" },
   topicEmoji: { fontSize: 28, flexShrink: 0 },
   topicInfo: { flex: 1 },
   topicLabel: { fontWeight: 700, fontSize: 17, color: "#fff", marginBottom: 2 },
@@ -536,7 +545,7 @@ const s = {
   back: { background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 4, padding: "4px 0" },
   topicBig: { fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 },
   subLabel: { fontSize: 14, color: "#555" },
-  subtopicCard: { width: "100%", background: "#ffffff06", border: "1px solid", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 10, marginBottom: 8, cursor: "pointer", color: "#ccc", fontSize: 15, fontWeight: 500, textAlign: "left" },
+  subtopicCard: { width: "100%", background: "#ffffff06", border: "1px solid", borderRadius: 12, padding: "18px 16px", display: "flex", alignItems: "center", gap: 10, marginBottom: 10, cursor: "pointer", color: "#ccc", fontSize: 15, fontWeight: 500, textAlign: "left", WebkitTapHighlightColor: "transparent", touchAction: "manipulation", userSelect: "none" },
   input: { width: "100%", background: "#ffffff08", border: "1px solid #ffffff18", borderRadius: 12, padding: "14px 16px", color: "#fff", fontSize: 15, outline: "none", marginBottom: 16, boxSizing: "border-box" },
   startBtn: { width: "100%", border: "none", borderRadius: 12, padding: "14px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
   spinner: { width: 36, height: 36, borderRadius: "50%", border: "3px solid #222", borderTop: "3px solid #e94560" },
