@@ -128,14 +128,17 @@ async function fetchAIQuestions(topic, subtopic, seen = [], count = 10) {
     : "";
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1000,
         messages: [
           {
             role: "user",
@@ -146,12 +149,11 @@ Return ONLY a valid JSON array. Each object must have exactly:
 No markdown, no preamble, just the JSON array.`,
           },
         ],
-        temperature: 0.8,
       }),
     });
 
     const data = await res.json();
-    const text = data.choices?.[0]?.message?.content ?? "";
+    const text = data.content?.[0]?.text ?? "";
     const clean = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
     return parsed.map((q) => ({ ...q, aiGenerated: true }));
