@@ -142,13 +142,15 @@ async function fetchAIQuestions(topic, subtopic, seen = [], count = 10) {
         messages: [
           {
             role: "user",
-            content: `Generate ${count} multiple choice quiz questions about "${subtopic}" in the context of ${topic}.
+            content: `You are a quiz generator. Session ID: ${Math.random().toString(36).slice(2)}. Generate ${count} multiple choice quiz questions about "${subtopic}" in the context of ${topic}.
 ${seenNote}
-Rules:
-- Vary the difficulty and angle of each question
-- Cover different aspects each time — avoid the most obvious questions
-- Mix practical, theoretical, and scenario-based questions
-- Never start two questions with the same words
+STRICT RULES:
+- Each question MUST be completely unique and different from all others
+- Cover a WIDE variety of angles: beginner tips, advanced techniques, common mistakes, surprising facts, troubleshooting, history, science behind it
+- Mix question styles: "what is", "why does", "when should", "which of these", "what happens when", "how do you"
+- Questions should range from easy to challenging
+- NEVER ask about the same concept twice
+- Think creatively — go beyond the obvious beginner questions
 Return ONLY a valid JSON array. Each object must have exactly:
 "question" (string), "options" (array of 4 strings), "answer" (string matching one option exactly), "explanation" (string).
 No markdown, no preamble, just the JSON array.`,
