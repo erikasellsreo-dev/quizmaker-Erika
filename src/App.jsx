@@ -144,6 +144,11 @@ async function fetchAIQuestions(topic, subtopic, seen = [], count = 10) {
             role: "user",
             content: `Generate ${count} multiple choice quiz questions about "${subtopic}" in the context of ${topic}.
 ${seenNote}
+Rules:
+- Vary the difficulty and angle of each question
+- Cover different aspects each time — avoid the most obvious questions
+- Mix practical, theoretical, and scenario-based questions
+- Never start two questions with the same words
 Return ONLY a valid JSON array. Each object must have exactly:
 "question" (string), "options" (array of 4 strings), "answer" (string matching one option exactly), "explanation" (string).
 No markdown, no preamble, just the JSON array.`,
