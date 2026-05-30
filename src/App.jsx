@@ -209,8 +209,11 @@ export default function QuizApp() {
     if (questions.length > 0 && questions.length - index <= 3) {
       fetchingMore.current = true;
       fetchAIQuestions(topic, subtopic, seenQ.current, 10).then((more) => {
-        seenQ.current = [...seenQ.current, ...more.map((q) => q.question)];
-        setQuestions((prev) => [...prev, ...more]);
+        const existingQs = new Set(seenQ.current.map(q => q.toLowerCase()));
+        const filtered = more.filter(q => !existingQs.has(q.question.toLowerCase()));
+        const toAdd = filtered.length > 0 ? filtered : more;
+        seenQ.current = [...seenQ.current, ...toAdd.map((q) => q.question)];
+        setQuestions((prev) => [...prev, ...toAdd]);
         fetchingMore.current = false;
       });
     }
