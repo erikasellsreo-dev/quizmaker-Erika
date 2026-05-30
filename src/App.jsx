@@ -124,7 +124,7 @@ function shuffle(arr) {
 // ─── AI QUESTION FETCH ──────────────────────────────────────────────────────
 async function fetchAIQuestions(topic, subtopic, seen = [], count = 10) {
   const seenNote = seen.length
-    ? `Do NOT repeat these questions: ${seen.slice(-20).join(" | ")}`
+    ? `IMPORTANT - Do NOT repeat any of these questions that have already been asked: ${seen.slice(-30).join(" | ")}. Generate completely new and different questions.`
     : "";
 
   try {
